@@ -214,20 +214,25 @@ static int doProbe(NSString *uuid) {
         if (!mgr) {
             state = @"unknown";
         } else {
-            __block bool found = false;
+            __block bool available = false;
             NSString *want = uuid.uppercaseString;
+            // A peripheral can be in peripheralList just because the system *knows*
+            // it, not because it's advertising right now. The wrapper's isAvailable
+            // flag is only set on didDiscoverPeripheral, so it — not mere list
+            // membership — is the real "keyboard is on and reachable" signal.
             [NSTimer scheduledTimerWithTimeInterval:0.3 repeats:YES block:^(NSTimer *t) {
-                if (deviceOnline(deviceForUUID(uuid))) { found = true; CFRunLoopStop(CFRunLoopGetCurrent()); return; }
                 for (id p in [mgr valueForKey:@"peripheralList"]) {
                     NSString *u = [[p valueForKey:@"uuid"] description].uppercaseString;
-                    if (u && [u isEqualToString:want]) { found = true; CFRunLoopStop(CFRunLoopGetCurrent()); return; }
+                    if (u && [u isEqualToString:want] && [[p valueForKey:@"isAvailable"] boolValue]) {
+                        available = true; CFRunLoopStop(CFRunLoopGetCurrent()); return;
+                    }
                 }
             }];
             [NSTimer scheduledTimerWithTimeInterval:3.0 repeats:NO block:^(NSTimer *t) {
                 CFRunLoopStop(CFRunLoopGetCurrent());
             }];
             CFRunLoopRun();
-            state = found ? @"available" : @"off";
+            state = available ? @"available" : @"off";
         }
     }
     [state writeToFile:stateFilePath(uuid) atomically:YES encoding:NSUTF8StringEncoding error:nil];
