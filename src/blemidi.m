@@ -123,7 +123,12 @@ static int doDisconnect(NSString *uuid) {
 static id makeManager(void) {
     Class C = NSClassFromString(@"AMSBTLEConnectionManager");
     if (!C) return nil;
-    Stub *stub = [Stub new];
+    // AMSBTLEConnectionManager keeps a NON-owning reference to its UI controller,
+    // so the stub must outlive the manager. Hold it in a process-lifetime static;
+    // otherwise ARC frees it when this function returns and the manager messages a
+    // dangling pointer from centralManagerDidUpdateState: (use-after-free / SIGSEGV).
+    static Stub *stub = nil;
+    if (!stub) stub = [Stub new];
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
     id mgr = [[C alloc] performSelector:@selector(initWithUIController:) withObject:stub];
