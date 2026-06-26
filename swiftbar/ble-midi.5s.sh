@@ -35,9 +35,9 @@ else
     now=$(date +%s); mt=$(stat -f %m "$STATE_FILE" 2>/dev/null || echo 0)
     [ $((now - mt)) -ge 10 ] && /usr/bin/open -n "$APP" --args probe "$UUID" >/dev/null 2>&1
     case "$(cat "$STATE_FILE" 2>/dev/null)" in
-        available) echo "$LABEL — available, tap to connect | sfimage=circle $CONNECT" ;;
-        off)       echo "$LABEL — off (powered down) | sfimage=zzz $CONNECT" ;;
-        *)         echo "$LABEL — tap to connect | sfimage=circle $CONNECT" ;;
+        available) echo "$LABEL — available | sfimage=circle $CONNECT" ;;
+        off)       echo "$LABEL — off | sfimage=zzz $CONNECT" ;;
+        *)         echo "$LABEL — disconnected | sfimage=circle $CONNECT" ;;
     esac
 fi
 
